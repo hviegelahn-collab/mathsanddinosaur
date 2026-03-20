@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MathPlay Kids</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg: #f6f8fb;
+      --card: #ffffff;
+      --primary: #5b7cff;
+      --text: #1f2937;
+      --muted: #6b7280;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      display: flex;
+    }
+
+    .sidebar {
+      width: 70px;
+      background: #111827;
+      color: white;
+      transition: width 0.25s;
+      padding-top: 20px;
+      overflow: hidden;
+    }
+
+    .sidebar:hover { width: 200px; }
+
+    .sidebar button {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 14px;
+      border: none;
+      background: none;
+      color: white;
+      cursor: pointer;
+    }
+
+    .sidebar span {
+      opacity: 0;
+      transition: opacity 0.2s;
+      white-space: nowrap;
+    }
+
+    .sidebar:hover span { opacity: 1; }
+
+    .main {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      padding: 40px;
+    }
+
+    h1 { margin: 0; font-size: 28px; color: var(--text); }
+
+    .subtitle { color: var(--muted); margin-bottom: 20px; }
+
+    .card {
+      background: var(--card);
+      padding: 35px;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+      text-align: center;
+      min-width: 320px;
+    }
+
+    .question {
+      font-size: 42px;
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 15px;
+    }
+
+    input {
+      font-size: 22px;
+      padding: 10px;
+      width: 100px;
+      border-radius: 10px;
+      border: 1px solid #e5e7eb;
+    }
+
+    .btn {
+      margin-top: 15px;
+      padding: 10px 18px;
+      border: none;
+      border-radius: 10px;
+      background: var(--primary);
+      color: white;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    canvas {
+      margin-top: 20px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+    }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      font-size: 60px;
+      font-weight: bold;
+    }
+
+    .modal {
+      background: white;
+      padding: 25px;
+      border-radius: 14px;
+      text-align: center;
+      color: black;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="sidebar">
+    <button onclick="showMath()">➕ <span>Addition</span></button>
+    <button onclick="showDino()">🦖 <span>Dino</span></button>
+  </div>
+
+  <div class="main">
+
+    <div id="mathGame">
+      <h1>Math Practice</h1>
+      <div class="subtitle">Solve the question</div>
+      <div class="card">
+        <div class="question" id="question"></div>
+        <input id="answer" type="number" placeholder=" ">
+        <br>
+        <button class="btn" id="checkBtn">Check</button>
+        <div id="result"></div>
+      </div>
+    </div>
+
+    <div id="dinoGame" style="display:none; text-align:center;">
+      <h1>Dino Game</h1>
+      <div class="subtitle">Press SPACE to jump</div>
+      <button class="btn" id="startBtn">▶ Start Game</button>
+      <canvas id="gameCanvas" width="500" height="200"></canvas>
+    </div>
+
+  </div>
+
+  <!-- COUNTDOWN -->
+  <div class="overlay" id="countdown"></div>
+
+  <!-- GAME OVER -->
+  <div class="overlay" id="gameOver">
+    <div class="modal">
+      <h3>Game Over</h3>
+      <button class="btn" onclick="restartGame()">Play Again</button>
+    </div>
+  </div>
+
+  <script>
+    let gameRunning = false;
+
+    function showMath(){
+      mathGame.style.display='block';
+      dinoGame.style.display='none';
+      gameRunning=false;
+    }
+
+    function showDino(){
+      mathGame.style.display='none';
+      dinoGame.style.display='block';
+      gameRunning=false;
+      startBtn.style.display='inline-block';
+    }
+
+    // COUNTDOWN
+    function startGame(){
+      let count = 3;
+      countdown.style.display = 'flex';
+      countdown.textContent = count;
+
+      let interval = setInterval(()=>{
+        count--;
+        if(count > 0){
+          countdown.textContent = count;
+        } else {
+          countdown.textContent = 'GO!';
+          clearInterval(interval);
+
+          setTimeout(()=>{
+            countdown.style.display = 'none';
+            gameRunning = true;
+            startBtn.style.display = 'none';
+            gameLoop();
+          }, 500);
+        }
+      }, 800);
+    }
+
+    // MATH
+    let a,b;
+    function newQ(){
+      a=Math.floor(Math.random()*5)+1;
+      b=Math.floor(Math.random()*5)+1;
+      question.textContent=`${a} + ${b}`;
+      answer.value='';
+      result.textContent='';
+    }
+
+    checkBtn.onclick=()=>{
+      if(Number(answer.value)===a+b){
+        result.textContent='✔️ Correct';
+        setTimeout(newQ,700);
+      } else {
+        result.textContent='Try again';
+      }
+    };
+
+    newQ();
+
+    // DINO
+    const ctx=gameCanvas.getContext('2d');
+    startBtn.addEventListener('click', startGame);
+
+    let dino={x:50,y:150,dy:0,j:false};
+    let obs={x:500};
+
+    function drawDino(){
+      ctx.fillStyle='green';
+      ctx.fillRect(dino.x,dino.y,30,20);
+      ctx.fillRect(dino.x+20,dino.y-10,15,15);
+    }
+
+    function gameLoop(){
+      if(!gameRunning) return;
+
+      ctx.clearRect(0,0,500,200);
+      drawDino();
+
+      ctx.fillStyle='red';
+      ctx.fillRect(obs.x,150,20,30);
+
+      dino.y+=dino.dy;
+      if(dino.y<150)dino.dy+=1.5;
+      else{dino.y=150;dino.j=false;}
+
+      obs.x-=5;
+      if(obs.x<0)obs.x=500;
+
+      if(obs.x<80&&obs.x>40&&dino.y>130){
+        gameRunning=false;
+        gameOver.style.display='flex';
+      }
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    document.addEventListener('keydown',e=>{
+      if(e.code==='Space'&&!dino.j&&gameRunning){
+        dino.dy=-15;
+        dino.j=true;
+      }
+    });
+
+    function restartGame(){
+      gameOver.style.display='none';
+      obs.x=500;
+      dino.y=150;
+      startGame();
+    }
+  </script>
+
+</body>
+</html>
